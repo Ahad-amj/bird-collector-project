@@ -1,0 +1,46 @@
+services:
+  birdcollectorspa:
+    image: postgres
+    container_name: birdcollectorspa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: bird_admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: birdcollectorspa
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_api_B
+    command: >
+      bash -c "
+              python manage.py makemigrations &&
+              python manage.py migrate &&
+              python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend/:/usr/src/backend/
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - birdcollectorspa
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend_B
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
